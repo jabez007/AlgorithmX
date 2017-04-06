@@ -8,23 +8,32 @@ from itertools import product
 from AlgorithmX import *
 
 
-def solve_sudoku(size, grid):
+def solve_sudoku(grid):
     """
     An efficient Sudoku solver using Algorithm X.
-    :param size: 
     :param grid: 
     :return: 
     """
-    R, C = size
-    N = R * C
-    X = ([("rc", rc) for rc in product(range(N), range(N))] +  # row, column
-         [("rn", rn) for rn in product(range(N), range(1, N + 1))] +
-         [("cn", cn) for cn in product(range(N), range(1, N + 1))] +
-         [("bn", bn) for bn in product(range(N), range(1, N + 1))])
+    rows, columns = int(len(grid) ** (1/2)), int(len(grid[0]) ** (1/2))
+    N = rows * columns
+
+    '''X is our universe - as a list'''
+    X = ([("rc", rc) for rc in product(range(N), range(N))] +  # row, column; coordinated for the grid
+         [("rn", rn) for rn in product(range(N), range(1, N + 1))] +  # 1 - 9 for each row (row_index, number)
+         [("cn", cn) for cn in product(range(N), range(1, N + 1))] +  # 1 - 9 for each column (column_index, number)
+         [("bn", bn) for bn in product(range(N), range(1, N + 1))])  # 1 - 9 for each "box" (box_index, number)
 
     Y = dict()
+    '''
+    Y separates our universe into subsets
+        where (row, column, number) covers
+            - (row, column)
+            - (row_index, number)
+            - (column_index, number)
+            - (box_index, number)
+    '''
     for r, c, n in product(range(N), range(N), range(1, N + 1)):
-        b = (r // R) * R + (c // C) # Box number
+        b = (r // rows) * rows + (c // columns)  # Box index
         Y[(r, c, n)] = [
             ("rc", (r, c)),
             ("rn", (r, n)),
@@ -33,6 +42,7 @@ def solve_sudoku(size, grid):
 
     X, Y = exact_cover(X, Y)
 
+    '''Select the known elements of the puzzle grid'''
     for i, row in enumerate(grid):
         for j, n in enumerate(row):
             if n:
@@ -56,7 +66,7 @@ if __name__ == "__main__":
         [0, 0, 0, 4, 1, 9, 0, 0, 5],
         [0, 0, 0, 0, 8, 0, 0, 7, 9]]
 
-    for sol in solve_sudoku((3, 3), puzzle):
+    for sol in solve_sudoku(puzzle):
         for line in sol:
             print(line)
         print()

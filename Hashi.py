@@ -61,7 +61,7 @@ def solve_hashi(grid):
     print(bridges_made)
 
     z = len(m)
-    
+
 
 """
 z=L(m)

@@ -1,41 +1,56 @@
 
-def exact_cover(X, Y):
-    X = {j: set() for j in X}
-    for i, row in Y.items():
+def exact_cover(x, y):
+    x = {j: set() for j in x}
+    for i, row in y.items():
         for j in row:
-            X[j].add(i)
-    return X, Y
+            x[j].add(i)
+    return x, y
 
 
-def solve(X, Y, solution=[]):
-    if not X:
+def solve(x, y, solution=[]):
+    if not x:
         yield list(solution)
     else:
-        c = min(X, key=lambda c: len(X[c]))
-        for r in list(X[c]):
+        c = min(x, key=lambda c: len(x[c]))
+        for r in list(x[c]):
             solution.append(r)
-            cols = select(X, Y, r)
-            for s in solve(X, Y, solution):
+            cols = select(x, y, r)
+            for s in solve(x, y, solution):
                 yield s
-            deselect(X, Y, r, cols)
+            deselect(x, y, r, cols)
             solution.pop()
 
 
-def select(X, Y, r):
+def select(x, y, r):
     cols = []
-    for j in Y[r]:
-        for i in X[j]:
-            for k in Y[i]:
+    for j in y[r]:
+        for i in x[j]:
+            for k in y[i]:
                 if k != j:
-                    X[k].remove(i)
-        cols.append(X.pop(j))
+                    x[k].remove(i)
+        cols.append(x.pop(j))
     return cols
 
 
-def deselect(X, Y, r, cols):
-    for j in reversed(Y[r]):
-        X[j] = cols.pop()
-        for i in X[j]:
-            for k in Y[i]:
+def deselect(x, y, r, cols):
+    for j in reversed(y[r]):
+        x[j] = cols.pop()
+        for i in x[j]:
+            for k in y[i]:
                 if k != j:
-                    X[k].add(i)
+                    x[k].add(i)
+
+if __name__ == "__main__":
+    X = {1, 2, 3, 4, 5, 6, 7}
+    Y = {
+        'A': [1, 4, 7],
+        'B': [1, 4],
+        'C': [4, 5, 7],
+        'D': [3, 5, 6],
+        'E': [2, 3, 6, 7],
+        'F': [2, 7]}
+
+    X, Y = exact_cover(X, Y)
+
+    for s in solve(X, Y):
+        print(s)  # prints each possible solution

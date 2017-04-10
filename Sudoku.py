@@ -18,7 +18,7 @@ def solve_sudoku(grid):
     N = rows * columns
 
     '''X is our universe - as a list'''
-    X = ([("rc", rc) for rc in product(range(N), range(N))] +  # row, column; coordinated for the grid
+    X = ([("rc", rc) for rc in product(range(N), range(N))] +  # row, column; coordinates for the grid
          [("rn", rn) for rn in product(range(N), range(1, N + 1))] +  # 1 - 9 for each row (row_index, number)
          [("cn", cn) for cn in product(range(N), range(1, N + 1))] +  # 1 - 9 for each column (column_index, number)
          [("bn", bn) for bn in product(range(N), range(1, N + 1))])  # 1 - 9 for each "box" (box_index, number)

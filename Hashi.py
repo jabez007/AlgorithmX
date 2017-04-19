@@ -133,7 +133,7 @@ def solve_hashi(puzzle):
     edges = {p: list() for p in positions}
     # get all the possible edges in the puzzle
     edge_list = list()
-    for p, b in islands.items():  # position of each island, and the number of bridges to/from that island
+    for p in islands.keys():  # position of each island in the puzzle
         for i, j in ((0, 1), (1, 0)):  # move down and to the right
             q = p[0] + i, p[1] + j
             e = [p, 0]  # edge starts at p

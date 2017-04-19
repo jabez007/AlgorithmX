@@ -1,3 +1,5 @@
+from itertools import product
+
 """
 In an exact cover problem we have to find subsets which cover each element in a given set exactly once. For example,
 
@@ -120,3 +122,48 @@ I: {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0}
 
 J: {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
 """
+
+
+def solve_hashi(puzzle):
+    positions = list(product(range(len(puzzle)), range(len(puzzle[0]))))  # coordinates for the grid
+
+    islands = {(i, j): int(puzzle[i][j]) for i, j in positions if '.' != puzzle[i][j]}
+    print(islands)
+
+    edges = {p: list() for p in positions}
+    # get all the possible edges in the puzzle
+    edge_list = list()
+    for p, b in islands.items():  # position of each island, and the number of bridges to/from that island
+        for i, j in ((0, 1), (1, 0)):  # move down and to the right
+            q = p[0] + i, p[1] + j
+            e = [p, 0]  # edge starts at p
+            while q in positions:
+                edges[q] += [e]  # add that to the edges through q
+                if q in islands:
+                    e[1] = q  # edge ends at q
+                    edges[p] += [e]  # add that to the edges from p
+                    edge_list += [e]  # add that to the list of all edges
+                    break
+                q = q[0] + i, q[1] + j
+    print(edge_list)
+
+    # remove edges that don't terminate; e[1] = 0
+    edges = {pos: [e for e in y if e[1] != 0] for pos, y in edges.items()}
+    '''this dict will have each position in the puzzle as a key, 
+    with a list of the edges through that position as the values'''
+    print(edges)
+
+    return
+
+# # # #
+
+
+if __name__ == "__main__":
+    puzzle = ["2..3.1.",
+              "....3.4",
+              ".1.2...",
+              "3.5.5.4",
+              ".1.1...",
+              "1.2.1..",
+              ".2.3..2"]
+    solve_hashi(puzzle)

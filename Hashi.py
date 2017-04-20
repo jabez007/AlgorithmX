@@ -132,7 +132,7 @@ def solve_hashi(puzzle):
 
     edges = {p: list() for p in positions}
     # get all the possible edges in the puzzle
-    edge_list = list()
+    # edge_list = list()
     for p in islands.keys():  # position of each island in the puzzle
         for i, j in ((0, 1), (1, 0)):  # move down and to the right
             q = p[0] + i, p[1] + j
@@ -142,16 +142,18 @@ def solve_hashi(puzzle):
                 if q in islands:
                     e[1] = q  # edge ends at q
                     edges[p] += [e]  # add that to the edges from p
-                    edge_list += [e]  # add that to the list of all edges
+                    # edge_list += [e]  # add that to the list of all edges
                     break
                 q = q[0] + i, q[1] + j
-    print(edge_list)
+    # print(edge_list)
 
     # remove edges that don't terminate; e[1] = 0
-    edges = {pos: [e for e in y if e[1] != 0] for pos, y in edges.items()}
+    edges = {pos: [e for e in y if e[1] != 0] for pos, y in edges.items() if pos in islands.keys()}
     '''this dict will have each position in the puzzle as a key, 
     with a list of the edges through that position as the values'''
     print(edges)
+
+    exclusions = dict()  # {island_pos: number of bridges that need to be excluded from total possible}
 
     return
 

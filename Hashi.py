@@ -165,20 +165,30 @@ def solve_hashi(puzzle):
     X = list()  # [(island_pos, (edge, index))]
     for pos, b in islands.items():
         for e in edges[pos]:
-            element = (pos, (e, 1))
+            element = (pos, (tuple(e), 1))
             X.append(element)
 
             if b != 1:
                 for i in e:
                     if i != pos and islands[i] != 1:
-                        element = (pos, (e, 2))
+                        element = (pos, (tuple(e), 2))
                         X.append(element)
 
         for ex in range(exclusions[pos]):
             element = (pos, "ex%s" % ex)
             X.append(element)
-
     print(X)
+
+    Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
+    for edge in edge_list:
+        for b in range(1, min(islands[edge[0]], islands[edge[1]], 2)+1):
+            key = (tuple(edge), b)
+            value = list()
+            for x in X:
+                if type(x[1]) is tuple and (tuple(edge) in x[1] and x[1][1] <= b):
+                    value.append(x)
+            Y[key] = value
+    print(Y)
 
     return
 

@@ -188,7 +188,26 @@ def solve_hashi(puzzle):
                 if type(x[1]) is tuple and (tuple(edge) in x[1] and x[1][1] <= b):
                     value.append(x)
             Y[key] = value
+    for pos, exclude in exclusions.items():
+
+        for ex in range(exclude-1, -1, -1):
+            for edge in edges[pos]:
+
+                for p in edge:
+                    if p != pos:
+                        other_pos = p
+                if exclusions[other_pos] > 0:
+                    if (tuple(edge), 2) in X:
+                        key = ((tuple(edge), 2), "ex%s" % ex)
+                    else:
+                        key = ((tuple(edge), 1), "ex%s" % ex)
+                    value = [(pos, "ex%s" % ex), (other_pos, "ex%s" % ex)]
+                    exclusions[other_pos] -= 1
+                    Y[key] = value
+                    pass
+
     print(Y)
+    print(exclusions)
 
     return
 

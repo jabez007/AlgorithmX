@@ -127,12 +127,14 @@ J: {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1}
 def solve_hashi(puzzle):
     positions = list(product(range(len(puzzle)), range(len(puzzle[0]))))  # coordinates for the grid
 
-    islands = {(i, j): int(puzzle[i][j]) for i, j in positions if '.' != puzzle[i][j]}
+    islands = {(i, j): int(puzzle[i][j])
+               for i, j in positions if '.' != puzzle[i][j]}
     print(islands)
 
-    edges = {p: list() for p in positions}
+    edges = {p: list()
+             for p in positions}
     # get all the possible edges in the puzzle
-    # edge_list = list()
+    edge_list = list()
     for p in islands.keys():  # position of each island in the puzzle
         for i, j in ((0, 1), (1, 0)):  # move down and to the right
             q = p[0] + i, p[1] + j
@@ -140,20 +142,43 @@ def solve_hashi(puzzle):
             while q in positions:
                 edges[q] += [e]  # add that to the edges through q
                 if q in islands:
-                    e[1] = q  # edge ends at q
-                    edges[p] += [e]  # add that to the edges from p
-                    # edge_list += [e]  # add that to the list of all edges
+                    if not (islands[p] == 1 and islands[q] == 1):  # make sure this is a valid edge
+                        e[1] = q  # edge ends at q
+                        edges[p] += [e]  # add that to the edges from p
+                        edge_list += [e]  # add that to the list of all edges
                     break
                 q = q[0] + i, q[1] + j
-    # print(edge_list)
+    print(edge_list)
 
     # remove edges that don't terminate; e[1] = 0
-    edges = {pos: [e for e in y if e[1] != 0] for pos, y in edges.items() if pos in islands.keys()}
+    edges = {pos: [e for e in y if e[1] != 0]
+             for pos, y in edges.items() if pos in islands.keys()}
     '''this dict will have each position in the puzzle as a key, 
     with a list of the edges through that position as the values'''
     print(edges)
 
-    exclusions = dict()  # {island_pos: number of bridges that need to be excluded from total possible}
+    exclusions = {pos: (len(edges[pos]) * min(islands[pos], 2)) - islands[pos]
+                  for pos in islands.keys()}
+    # {island_pos: number of bridges that need to be excluded from total possible}
+    print(exclusions)
+
+    X = list()  # [(island_pos, (edge, index))]
+    for pos, b in islands.items():
+        for e in edges[pos]:
+            element = (pos, (e, 1))
+            X.append(element)
+
+            if b != 1:
+                for i in e:
+                    if i != pos and islands[i] != 1:
+                        element = (pos, (e, 2))
+                        X.append(element)
+
+        for ex in range(exclusions[pos]):
+            element = (pos, "ex%s" % ex)
+            X.append(element)
+
+    print(X)
 
     return
 

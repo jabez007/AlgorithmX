@@ -1,4 +1,5 @@
 from itertools import product
+from AlgorithmX import *
 
 """
 In an exact cover problem we have to find subsets which cover each element in a given set exactly once. For example,
@@ -181,33 +182,26 @@ def solve_hashi(puzzle):
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
-        for b in range(1, min(islands[edge[0]], islands[edge[1]], 2)+1):
+        p, q = edge
+        for b in range(1, min(islands[p], islands[q], 2)+1):
             key = (tuple(edge), b)
             value = list()
             for x in X:
                 if type(x[1]) is tuple and (tuple(edge) in x[1] and x[1][1] <= b):
                     value.append(x)
             Y[key] = value
-    for pos, exclude in exclusions.items():
-
-        for ex in range(exclude-1, -1, -1):
-            for edge in edges[pos]:
-
-                for p in edge:
-                    if p != pos:
-                        other_pos = p
-                if exclusions[other_pos] > 0:
-                    if (tuple(edge), 2) in X:
-                        key = ((tuple(edge), 2), "ex%s" % ex)
-                    else:
-                        key = ((tuple(edge), 1), "ex%s" % ex)
-                    value = [(pos, "ex%s" % ex), (other_pos, "ex%s" % ex)]
-                    exclusions[other_pos] -= 1
-                    Y[key] = value
-                    pass
-
+    for edge in edge_list:
+        p, q = edge
+        for p_ex, q_ex in product(range(exclusions[p]), range(exclusions[q])):
+            for b in range(1, min(islands[p], islands[q], 2) + 1):
+                key = ((tuple(edge), b), ("ex%s" % p_ex, "ex%s" % q_ex))
+                value = [(p, "ex%s" % p_ex), (q, "ex%s" % q_ex),
+                         (p, (tuple(edge), b)), (q, (tuple(edge), b))]
+                Y[key] = value
     print(Y)
-    print(exclusions)
+
+    X, Y = exact_cover(X, Y)
+    print(X)
 
     return
 

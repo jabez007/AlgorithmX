@@ -181,9 +181,9 @@ def solve_hashi(puzzle):
         for b in range(1, min(islands[p], islands[q], 2)+1):
             key = (tuple(edge), b)
             value = list()
-            for x in X:
-                if type(x[1]) is tuple and (tuple(edge) in x[1] and x[1][1] <= b):
-                    value.append(x)
+            for c in range(1, b+1):
+                value.append((p, (tuple(edge), c)))
+                value.append((q, (tuple(edge), c)))
             Y[key] = value
     for edge in edge_list:
         p, q = edge

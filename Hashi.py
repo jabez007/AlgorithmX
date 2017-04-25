@@ -196,9 +196,10 @@ def solve_hashi(puzzle):
     print("Y:",Y)
 
     X, Y = exact_cover(X, Y)
-    print(X)
+    print("new X:",X)
 
-    return
+    for solution in solve(X, Y, []):
+        yield solution
 
 # # # #
 
@@ -211,4 +212,5 @@ if __name__ == "__main__":
               ".1.1...",
               "1.2.1..",
               ".2.3..2"]
-    solve_hashi(puzzle)
+    for sol in solve_hashi(puzzle):
+        print(sol)

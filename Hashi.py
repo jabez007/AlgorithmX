@@ -153,19 +153,27 @@ def solve_hashi(puzzle):
 
     # remove edges that don't terminate; e[1] = 0
     edges = {pos: [e for e in y if e[1] != 0]
-             for pos, y in edges.items() if pos in islands.keys()}
-    '''this dict will have each position in the puzzle as a key, 
-    with a list of the edges through that position as the values'''
+             for pos, y in edges.items()}
     print(edges)
 
-    exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in edges[pos]) - islands[pos]
+    intersecting_edges = {pos: y
+                          for pos, y in edges.items() if pos not in islands.keys() and len(y) > 1}
+    print(intersecting_edges)
+
+    island_edges = {pos: y
+                    for pos, y in edges.items() if pos in islands.keys()}
+    '''this dict will have each island position in the puzzle as a key, 
+    with a list of the edges to/from that position as the values'''
+    print(island_edges)
+
+    exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in island_edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
     print(exclusions)
 
     X = list()  # [(island_pos, (edge, index))]
     for pos in islands.keys():
-        for e in edges[pos]:
+        for e in island_edges[pos]:
             p, q = e
             for b in range(1, min(islands[p], islands[q], 2)+1):
                 element = (pos, (tuple(e), b))
@@ -173,37 +181,53 @@ def solve_hashi(puzzle):
         for ex in range(exclusions[pos]):
             element = (pos, "ex%s" % ex)
             X.append(element)
-    print("X:",X)
+    print("X:", X)
+
+    def generate_exclusions(for_edge, all=False):
+        pos1, pos2 = for_edge
+        for p_ex, q_ex in product(range(exclusions[pos1]), range(exclusions[pos2])):
+            for bridges in range(1, min(islands[pos1], islands[pos2], 2) + 1):
+                k = ((tuple(for_edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
+                v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
+                     (pos1, (tuple(for_edge), bridges)), (pos2, (tuple(for_edge), bridges))]
+                yield k, v
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
+        intersects = False
         p, q = edge
         for b in range(1, min(islands[p], islands[q], 2)+1):
-            key = (tuple(edge), b)
-            value = list()
+            start_key = (tuple(edge), b)
+            start_value = list()
             for c in range(1, b+1):
-                value.append((p, (tuple(edge), c)))
-                value.append((q, (tuple(edge), c)))
-            Y[key] = value
+                start_value.append((p, (tuple(edge), c)))
+                start_value.append((q, (tuple(edge), c)))
+            # need to exclude intersecting edges
+            # trace the path from p to q checking each position in the intersection dict
+            for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1), range(min(p[1], q[1]), max(p[1], q[1])+1)):
+                # if an intersecting position is found, exclude all possible versions of the other edges
+                if pos in intersecting_edges:
+                    intersects = True
+                    for inter_edge in intersecting_edges[pos]:
+                        if inter_edge != edge:
+                            for key, value in generate_exclusions(inter_edge, all=True):
+                                Y[tuple(edge), b, key] = start_value + value
+            if not intersects:
+                Y[start_key] = start_value
     for edge in edge_list:
-        p, q = edge
-        for p_ex, q_ex in product(range(exclusions[p]), range(exclusions[q])):
-            for b in range(1, min(islands[p], islands[q], 2) + 1):
-                key = ((tuple(edge), b), ("ex%s" % p_ex, "ex%s" % q_ex))
-                value = [(p, "ex%s" % p_ex), (q, "ex%s" % q_ex),
-                         (p, (tuple(edge), b)), (q, (tuple(edge), b))]
-                Y[key] = value
-    print("Y:",Y)
+        for key, value in generate_exclusions(edge):
+            Y[key] = value
+    print("Y:", Y)
 
     X, Y = exact_cover(X, Y)
-    print("new X:",X)
+    print("new X:", X)
 
     extracted_solutions = set()
     for solution in solve(X, Y, []):
         extracted_sol = list()
-        for s in solution:
-            if type(s[1]) is int:
-                extracted_sol.append(s)
+        for sol in solution:
+            if type(sol[1]) is int:
+                extracted_sol.append((sol[0], sol[1]))
         extracted_sol = tuple(sorted(extracted_sol))
         if extracted_sol not in extracted_solutions:
             yield extracted_sol
@@ -213,12 +237,12 @@ def solve_hashi(puzzle):
 
 
 if __name__ == "__main__":
-    puzzle = ["2..3.1.",
-              "....3.4",
-              ".1.2...",
-              "3.5.5.4",
-              ".1.1...",
-              "1.2.1..",
-              ".2.3..2"]
-    for sol in solve_hashi(puzzle):
-        print(sol)
+    grid = ["2..3.1.",
+            "....3.4",
+            ".1.2...",
+            "3.5.5.4",
+            ".1.1...",
+            "1.2.1..",
+            ".2.3..2"]
+    for solve in solve_hashi(grid):
+        print(solve)

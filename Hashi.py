@@ -158,27 +158,22 @@ def solve_hashi(puzzle):
     with a list of the edges through that position as the values'''
     print(edges)
 
-    exclusions = {pos: (len(edges[pos]) * min(islands[pos], 2)) - islands[pos]
+    exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
     print(exclusions)
 
     X = list()  # [(island_pos, (edge, index))]
-    for pos, b in islands.items():
+    for pos in islands.keys():
         for e in edges[pos]:
-            element = (pos, (tuple(e), 1))
-            X.append(element)
-
-            if b != 1:
-                for i in e:
-                    if i != pos and islands[i] != 1:
-                        element = (pos, (tuple(e), 2))
-                        X.append(element)
-
+            p, q = e
+            for b in range(1, min(islands[p], islands[q], 2)+1):
+                element = (pos, (tuple(e), b))
+                X.append(element)
         for ex in range(exclusions[pos]):
             element = (pos, "ex%s" % ex)
             X.append(element)
-    print(X)
+    print("X:",X)
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
@@ -198,7 +193,7 @@ def solve_hashi(puzzle):
                 value = [(p, "ex%s" % p_ex), (q, "ex%s" % q_ex),
                          (p, (tuple(edge), b)), (q, (tuple(edge), b))]
                 Y[key] = value
-    print(Y)
+    print("Y:",Y)
 
     X, Y = exact_cover(X, Y)
     print(X)

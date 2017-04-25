@@ -198,8 +198,16 @@ def solve_hashi(puzzle):
     X, Y = exact_cover(X, Y)
     print("new X:",X)
 
+    extracted_solutions = set()
     for solution in solve(X, Y, []):
-        yield solution
+        extracted_sol = list()
+        for s in solution:
+            if type(s[1]) is int:
+                extracted_sol.append(s)
+        extracted_sol = tuple(sorted(extracted_sol))
+        if extracted_sol not in extracted_solutions:
+            yield extracted_sol
+            extracted_solutions.add(extracted_sol)
 
 # # # #
 

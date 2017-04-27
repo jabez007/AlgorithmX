@@ -130,7 +130,7 @@ def solve_hashi(puzzle):
 
     islands = {(i, j): int(puzzle[i][j])
                for i, j in positions if '.' != puzzle[i][j]}
-    # print(islands)
+    # print("islands:", islands)
 
     edges = {p: list()
              for p in positions}
@@ -149,7 +149,7 @@ def solve_hashi(puzzle):
                         edge_list += [e]  # add that to the list of all edges
                     break
                 q = q[0] + i, q[1] + j
-    # print(edge_list)
+    # print("edges list:", edge_list)
 
     # remove edges that don't terminate; e[1] = 0
     edges = {pos: [e for e in y if e[1] != 0]
@@ -158,18 +158,20 @@ def solve_hashi(puzzle):
 
     intersecting_edges = {pos: y
                           for pos, y in edges.items() if pos not in islands.keys() and len(y) > 1}
-    # print(intersecting_edges)
+    # print("intersections:", intersecting_edges)
 
     island_edges = {pos: y
                     for pos, y in edges.items() if pos in islands.keys()}
     '''this dict will have each island position in the puzzle as a key, 
     with a list of the edges to/from that position as the values'''
-    # print(island_edges)
+    # print("bridges:", island_edges)
 
     exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in island_edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
     # print(exclusions)
+
+    # # # #
 
     X = list()  # [(island_pos, (edge, index))]
     for pos in islands.keys():
@@ -181,13 +183,13 @@ def solve_hashi(puzzle):
         for ex in range(exclusions[pos]):
             element = (pos, "ex%s" % ex)
             X.append(element)
-    # print("X:", X)
+    print("X:", X)
     print("Constructed X")
 
-    def generate_exclusions(for_edge, all=False):
+    def generate_exclusions(for_edge, both=False):
         pos1, pos2 = for_edge
         exes = list(product(range(exclusions[pos1]), range(exclusions[pos2])))
-        if not all:
+        if not both:
             for p_ex, q_ex in exes:
                 for bridges in range(1, min(islands[pos1], islands[pos2], 2) + 1):
                     k = ((tuple(for_edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
@@ -202,23 +204,17 @@ def solve_hashi(puzzle):
                     k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
                     v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
                          (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
-                    yield k, v
                 else:
                     ex1, ex2 = comb
                     p_ex1, q_ex1 = ex1
                     p_ex2, q_ex2 = ex2
                     k = ((tuple(for_edge), 1, 2),
                          ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
-                    v = set()
-                    v.add((pos1, "ex%s" % p_ex1))
-                    v.add((pos2, "ex%s" % q_ex1))
-                    v.add((pos1, (tuple(for_edge), 1)))
-                    v.add((pos2, (tuple(for_edge), 1)))
-                    v.add((pos1, "ex%s" % p_ex2))
-                    v.add((pos2, "ex%s" % q_ex2))
-                    v.add((pos1, (tuple(for_edge), 2)))
-                    v.add((pos2, (tuple(for_edge), 2)))
-                    yield k, list(v)
+                    v = [(pos1, "ex%s" % p_ex1), (pos2, "ex%s" % q_ex1),
+                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1)),
+                         (pos1, "ex%s" % p_ex2), (pos2, "ex%s" % q_ex2),
+                         (pos1, (tuple(for_edge), 2)), (pos2, (tuple(for_edge), 2))]
+                yield k, set(v)
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
@@ -231,25 +227,33 @@ def solve_hashi(puzzle):
                 start_value.append((p, (tuple(edge), c)))
                 start_value.append((q, (tuple(edge), c)))
             # need to exclude intersecting edges
+            intersect_key = list()
+            intersect_value = set()
             # trace the path from p to q checking each position in the intersection dict
-            for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1), range(min(p[1], q[1]), max(p[1], q[1])+1)):
+            for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1),
+                               range(min(p[1], q[1]), max(p[1], q[1])+1)):
                 # if an intersecting position is found, exclude all possible versions of the other edges
-                if pos in intersecting_edges:
+                if pos in intersecting_edges.keys():
                     intersects = True
                     for inter_edge in intersecting_edges[pos]:
                         if inter_edge != edge:
-                            for key, value in generate_exclusions(inter_edge, all=True):
-                                Y[tuple(edge), b, key] = start_value + value
+                            for key, value in generate_exclusions(inter_edge, both=True):
+                                intersect_key.append(key)
+                                intersect_value = intersect_value.union(value)
+            if intersects:
+                Y[tuple(edge), b, tuple(intersect_key)] = start_value + list(intersect_value)
             if not intersects:
                 Y[start_key] = start_value
     for edge in edge_list:
         for key, value in generate_exclusions(edge):
             Y[key] = value
-    # print("Y:", Y)
+    print("Y:", Y)
     print("Constructed Y")
 
+    # # # #
+
     X, Y = exact_cover(X, Y)
-    # print("new X:", X)
+    print("new X:", X)
     print("Reformatted X")
 
     print("Solving...")
@@ -268,25 +272,54 @@ def solve_hashi(puzzle):
 
 
 if __name__ == "__main__":
-    grid = ["2..3.1.",
+    import time
+
+    def draw(puzzle, solved):
+        grid = [list(ln) for ln in puzzle]
+
+        north_south = ".|$"
+        east_west = ".-="
+
+        for edge in solved:
+            p, q = edge[0]
+            b = edge[1]
+
+            for pos in product(range(min(p[0], q[0]), max(p[0], q[0]) + 1),
+                               range(min(p[1], q[1]), max(p[1], q[1]) + 1)):
+                r, c = pos
+                if grid[r][c] == ".":
+                    if p[0] == q[0]:
+                        grid[r][c] = east_west[b]
+                    elif p[1] == q[1]:
+                        grid[r][c] = north_south[b]
+
+        return "\n".join(["".join(ln) for ln in grid])
+
+    x7_1 = ["2..3.1.",
             "....3.4",
             ".1.2...",
             "3.5.5.4",
             ".1.1...",
             "1.2.1..",
             ".2.3..2"]
-    hard = ["2.2...3.3",
-            ".2..3..3.",
-            "3....1..3",
-            ".3.2...2.",
-            "4.3.2...3",
-            ".3.2.3.3.",
-            "3.....2.4",
-            ".3..3..1.",
-            "3.2...4.5",
-            ".2...5.2.",
-            "3.3.2.3.2",
-            ".2...3...",
-            "3..3..6.2"]
-    for solve in solve_hashi(hard):
+    """
+    (((2, 3), (4, 3)), 1, (((((3, 2), (3, 4)), 1, 2), ('ex0', 'ex0'), ('ex0', 'ex1')),)): [((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), (((2, 3), (4, 3)), 1)), ((3, 2), (((3, 2), (3, 4)), 2)), ((3, 4), (((3, 2), (3, 4)), 2)), ((3, 2), 'ex0'), ((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), 'ex1'), ((3, 4), 'ex0'), ((3, 4), (((3, 2), (3, 4)), 1))], 
+    
+    (((3, 2), (3, 4)), 1, (((((2, 3), (4, 3)), 1), ('ex0', 'ex0')), ((((2, 3), (4, 3)), 1), ('ex1', 'ex0')))): [((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), (((3, 2), (3, 4)), 1)), ((2, 3), 'ex1'), ((2, 3), 'ex0'), ((4, 3), (((2, 3), (4, 3)), 1)), ((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), 'ex0')], 
+    (((3, 2), (3, 4)), 2, (((((2, 3), (4, 3)), 1), ('ex0', 'ex0')), ((((2, 3), (4, 3)), 1), ('ex1', 'ex0')))): [((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), (((3, 2), (3, 4)), 1)), ((3, 2), (((3, 2), (3, 4)), 2)), ((3, 4), (((3, 2), (3, 4)), 2)), ((2, 3), 'ex1'), ((2, 3), 'ex0'), ((4, 3), (((2, 3), (4, 3)), 1)), ((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), 'ex0')]
+    """
+
+    # this one fails because (3, 0) <-> (3, 3) intersects two possible edges
+    x7_2 = ["2.3..1.",
+            ".1.1..2",
+            "..3.1..",
+            "2..1..3",
+            "..2.2..",
+            "1......",
+            ".2..3.2"]
+
+    start = time.time()
+    for solve in solve_hashi(x7_1):
         print(solve)
+        print(draw(x7_1, solve))
+    print("Finished in %s minutes" % ((time.time() - start) / 60))

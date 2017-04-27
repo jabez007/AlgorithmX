@@ -1,4 +1,4 @@
-from itertools import product
+from itertools import product, combinations
 from AlgorithmX import *
 
 """
@@ -130,7 +130,7 @@ def solve_hashi(puzzle):
 
     islands = {(i, j): int(puzzle[i][j])
                for i, j in positions if '.' != puzzle[i][j]}
-    print(islands)
+    # print(islands)
 
     edges = {p: list()
              for p in positions}
@@ -149,27 +149,27 @@ def solve_hashi(puzzle):
                         edge_list += [e]  # add that to the list of all edges
                     break
                 q = q[0] + i, q[1] + j
-    print(edge_list)
+    # print(edge_list)
 
     # remove edges that don't terminate; e[1] = 0
     edges = {pos: [e for e in y if e[1] != 0]
              for pos, y in edges.items()}
-    print(edges)
+    # print(edges)
 
     intersecting_edges = {pos: y
                           for pos, y in edges.items() if pos not in islands.keys() and len(y) > 1}
-    print(intersecting_edges)
+    # print(intersecting_edges)
 
     island_edges = {pos: y
                     for pos, y in edges.items() if pos in islands.keys()}
     '''this dict will have each island position in the puzzle as a key, 
     with a list of the edges to/from that position as the values'''
-    print(island_edges)
+    # print(island_edges)
 
     exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in island_edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
-    print(exclusions)
+    # print(exclusions)
 
     X = list()  # [(island_pos, (edge, index))]
     for pos in islands.keys():
@@ -181,16 +181,44 @@ def solve_hashi(puzzle):
         for ex in range(exclusions[pos]):
             element = (pos, "ex%s" % ex)
             X.append(element)
-    print("X:", X)
+    # print("X:", X)
+    print("Constructed X")
 
     def generate_exclusions(for_edge, all=False):
         pos1, pos2 = for_edge
-        for p_ex, q_ex in product(range(exclusions[pos1]), range(exclusions[pos2])):
-            for bridges in range(1, min(islands[pos1], islands[pos2], 2) + 1):
-                k = ((tuple(for_edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
-                v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
-                     (pos1, (tuple(for_edge), bridges)), (pos2, (tuple(for_edge), bridges))]
-                yield k, v
+        exes = list(product(range(exclusions[pos1]), range(exclusions[pos2])))
+        if not all:
+            for p_ex, q_ex in exes:
+                for bridges in range(1, min(islands[pos1], islands[pos2], 2) + 1):
+                    k = ((tuple(for_edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
+                    v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
+                         (pos1, (tuple(for_edge), bridges)), (pos2, (tuple(for_edge), bridges))]
+                    yield k, v
+        else:
+            comb_size = min(islands[pos1], islands[pos2], 2)
+            for comb in combinations(exes, comb_size):
+                if comb_size == 1:
+                    p_ex, q_ex = comb[0]
+                    k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
+                    v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
+                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
+                    yield k, v
+                else:
+                    ex1, ex2 = comb
+                    p_ex1, q_ex1 = ex1
+                    p_ex2, q_ex2 = ex2
+                    k = ((tuple(for_edge), 1, 2),
+                         ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
+                    v = set()
+                    v.add((pos1, "ex%s" % p_ex1))
+                    v.add((pos2, "ex%s" % q_ex1))
+                    v.add((pos1, (tuple(for_edge), 1)))
+                    v.add((pos2, (tuple(for_edge), 1)))
+                    v.add((pos1, "ex%s" % p_ex2))
+                    v.add((pos2, "ex%s" % q_ex2))
+                    v.add((pos1, (tuple(for_edge), 2)))
+                    v.add((pos2, (tuple(for_edge), 2)))
+                    yield k, list(v)
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
@@ -217,11 +245,14 @@ def solve_hashi(puzzle):
     for edge in edge_list:
         for key, value in generate_exclusions(edge):
             Y[key] = value
-    print("Y:", Y)
+    # print("Y:", Y)
+    print("Constructed Y")
 
     X, Y = exact_cover(X, Y)
-    print("new X:", X)
+    # print("new X:", X)
+    print("Reformatted X")
 
+    print("Solving...")
     extracted_solutions = set()
     for solution in solve(X, Y, []):
         extracted_sol = list()
@@ -244,5 +275,18 @@ if __name__ == "__main__":
             ".1.1...",
             "1.2.1..",
             ".2.3..2"]
-    for solve in solve_hashi(grid):
+    hard = ["2.2...3.3",
+            ".2..3..3.",
+            "3....1..3",
+            ".3.2...2.",
+            "4.3.2...3",
+            ".3.2.3.3.",
+            "3.....2.4",
+            ".3..3..1.",
+            "3.2...4.5",
+            ".2...5.2.",
+            "3.3.2.3.2",
+            ".2...3...",
+            "3..3..6.2"]
+    for solve in solve_hashi(hard):
         print(solve)

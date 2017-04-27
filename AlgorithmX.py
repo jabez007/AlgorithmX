@@ -1,3 +1,9 @@
+"""
+Algorithm X in 30-ish lines of Python
+from
+http://www.cs.mcgill.ca/~aassaf9/python/algorithm_x.html
+"""
+
 
 def exact_cover(x, y):
     x = {j: set() for j in x}

@@ -186,35 +186,27 @@ def solve_hashi(puzzle):
     print("X:", X)
     print("Constructed X")
 
-    def generate_exclusions(for_edge, both=False):
+    def generate_exclusions(for_edge):
         pos1, pos2 = for_edge
         exes = list(product(range(exclusions[pos1]), range(exclusions[pos2])))
-        if not both:
-            for p_ex, q_ex in exes:
-                for bridges in range(1, min(islands[pos1], islands[pos2], 2) + 1):
-                    k = ((tuple(for_edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
-                    v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
-                         (pos1, (tuple(for_edge), bridges)), (pos2, (tuple(for_edge), bridges))]
-                    yield k, v
-        else:
-            comb_size = min(islands[pos1], islands[pos2], 2)
-            for comb in combinations(exes, comb_size):
-                if comb_size == 1:
-                    p_ex, q_ex = comb[0]
-                    k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
-                    v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
-                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
-                else:
-                    ex1, ex2 = comb
-                    p_ex1, q_ex1 = ex1
-                    p_ex2, q_ex2 = ex2
-                    k = ((tuple(for_edge), 1, 2),
-                         ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
-                    v = [(pos1, "ex%s" % p_ex1), (pos2, "ex%s" % q_ex1),
-                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1)),
-                         (pos1, "ex%s" % p_ex2), (pos2, "ex%s" % q_ex2),
-                         (pos1, (tuple(for_edge), 2)), (pos2, (tuple(for_edge), 2))]
-                yield k, set(v)
+        comb_size = min(islands[pos1], islands[pos2], 2)
+        for comb in combinations(exes, comb_size):
+            if comb_size == 1:
+                p_ex, q_ex = comb[0]
+                k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
+                v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
+                     (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
+            else:
+                ex1, ex2 = comb
+                p_ex1, q_ex1 = ex1
+                p_ex2, q_ex2 = ex2
+                k = ((tuple(for_edge), 1, 2),
+                     ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
+                v = [(pos1, "ex%s" % p_ex1), (pos2, "ex%s" % q_ex1),
+                     (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1)),
+                     (pos1, "ex%s" % p_ex2), (pos2, "ex%s" % q_ex2),
+                     (pos1, (tuple(for_edge), 2)), (pos2, (tuple(for_edge), 2))]
+            yield k, set(v)
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
@@ -227,26 +219,35 @@ def solve_hashi(puzzle):
                 start_value.append((p, (tuple(edge), c)))
                 start_value.append((q, (tuple(edge), c)))
             # need to exclude intersecting edges
-            intersect_key = list()
-            intersect_value = set()
+            intersected_edges = set()
             # trace the path from p to q checking each position in the intersection dict
-            for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1),
-                               range(min(p[1], q[1]), max(p[1], q[1])+1)):
+            for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1), range(min(p[1], q[1]), max(p[1], q[1])+1)):
                 # if an intersecting position is found, exclude all possible versions of the other edges
                 if pos in intersecting_edges.keys():
                     intersects = True
                     for inter_edge in intersecting_edges[pos]:
                         if inter_edge != edge:
-                            for key, value in generate_exclusions(inter_edge, both=True):
-                                intersect_key.append(key)
-                                intersect_value = intersect_value.union(value)
+                            intersected_edges.add(tuple(inter_edge))
             if intersects:
-                Y[tuple(edge), b, tuple(intersect_key)] = start_value + list(intersect_value)
+                for inter_exes in product(*[generate_exclusions(inter_edge) for inter_edge in intersected_edges]):
+                    intersect_key = list()
+                    intersect_value = set()
+                    for exclude_intersect in inter_exes:
+                        key, value = exclude_intersect
+                        intersect_key.append(key)
+                        intersect_value = intersect_value.union(value)
+                    Y[tuple(edge), b, tuple(intersect_key)] = start_value + list(intersect_value)
             if not intersects:
                 Y[start_key] = start_value
+    # also have exclusions of individual bridges needed to meet bridge limit regardless of intersections
     for edge in edge_list:
-        for key, value in generate_exclusions(edge):
-            Y[key] = value
+        p, q = edge
+        for p_ex, q_ex in product(range(exclusions[p]), range(exclusions[q])):
+            for bridges in range(1, min(islands[p], islands[q], 2) + 1):
+                key = ((tuple(edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
+                value = [(p, "ex%s" % p_ex), (q, "ex%s" % q_ex),
+                         (p, (tuple(edge), bridges)), (q, (tuple(edge), bridges))]
+                Y[key] = value
     print("Y:", Y)
     print("Constructed Y")
 

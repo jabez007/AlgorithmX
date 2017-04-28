@@ -169,7 +169,7 @@ def solve_hashi(puzzle):
     exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in island_edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
-    # print(exclusions)
+    print("needed exclusions: ", exclusions)
 
     # # # #
 
@@ -188,28 +188,35 @@ def solve_hashi(puzzle):
 
     def generate_exclusions(for_edge):
         pos1, pos2 = for_edge
-        exes = list(product(range(exclusions[pos1]), range(exclusions[pos2])))
         comb_size = min(islands[pos1], islands[pos2], 2)
-        for comb in combinations(exes, comb_size):
-            if comb_size == 1:
-                p_ex, q_ex = comb[0]
-                k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
-                v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
-                     (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
-            else:
-                ex1, ex2 = comb
-                p_ex1, q_ex1 = ex1
-                p_ex2, q_ex2 = ex2
-                k = ((tuple(for_edge), 1, 2),
-                     ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
-                v = [(pos1, "ex%s" % p_ex1), (pos2, "ex%s" % q_ex1),
-                     (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1)),
-                     (pos1, "ex%s" % p_ex2), (pos2, "ex%s" % q_ex2),
-                     (pos1, (tuple(for_edge), 2)), (pos2, (tuple(for_edge), 2))]
-            yield k, set(v)
+
+        if exclusions[pos1] > 0 and exclusions[pos2] > 0:
+            exes = list(product(range(exclusions[pos1]), range(exclusions[pos2])))
+            for comb in combinations(exes, comb_size):
+                if comb_size == 1:
+                    p_ex, q_ex = comb[0]
+                    k = ((tuple(for_edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
+                    v = [(pos1, "ex%s" % p_ex), (pos2, "ex%s" % q_ex),
+                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1))]
+                else:
+                    ex1, ex2 = comb
+                    p_ex1, q_ex1 = ex1
+                    p_ex2, q_ex2 = ex2
+                    k = ((tuple(for_edge), 1, 2),
+                         ("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2))
+                    v = [(pos1, "ex%s" % p_ex1), (pos2, "ex%s" % q_ex1),
+                         (pos1, (tuple(for_edge), 1)), (pos2, (tuple(for_edge), 1)),
+                         (pos1, "ex%s" % p_ex2), (pos2, "ex%s" % q_ex2),
+                         (pos1, (tuple(for_edge), 2)), (pos2, (tuple(for_edge), 2))]
+                yield k, set(v)
+        elif exclusions[pos1] > 0:
+            pass
+        elif exclusions[pos2] > 0:
+            pass
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
+        print("Creating subset for", edge)
         intersects = False
         p, q = edge
         for b in range(1, min(islands[p], islands[q], 2)+1):
@@ -219,7 +226,7 @@ def solve_hashi(puzzle):
                 start_value.append((p, (tuple(edge), c)))
                 start_value.append((q, (tuple(edge), c)))
             # need to exclude intersecting edges
-            intersected_edges = set()
+            intersected_edges = list()
             # trace the path from p to q checking each position in the intersection dict
             for pos in product(range(min(p[0], q[0]), max(p[0], q[0])+1), range(min(p[1], q[1]), max(p[1], q[1])+1)):
                 # if an intersecting position is found, exclude all possible versions of the other edges
@@ -227,12 +234,15 @@ def solve_hashi(puzzle):
                     intersects = True
                     for inter_edge in intersecting_edges[pos]:
                         if inter_edge != edge:
-                            intersected_edges.add(tuple(inter_edge))
+                            intersected_edges.append(inter_edge)
             if intersects:
-                for inter_exes in product(*[generate_exclusions(inter_edge) for inter_edge in intersected_edges]):
+                print("intersects: ", intersected_edges)
+                print([list(generate_exclusions(inter_edge)) for inter_edge in intersected_edges])
+                for inter_exes in product(*[list(generate_exclusions(inter_edge)) for inter_edge in intersected_edges]):
                     intersect_key = list()
                     intersect_value = set()
                     for exclude_intersect in inter_exes:
+                        print("Adding exclusion: ",exclude_intersect)
                         key, value = exclude_intersect
                         intersect_key.append(key)
                         intersect_value = intersect_value.union(value)
@@ -453,6 +463,14 @@ if __name__ == "__main__":
     ((((4, 4), (6, 4)), 1), ('ex2', 'ex2')): [((4, 4), 'ex2'), ((6, 4), 'ex2'), ((4, 4), (((4, 4), (6, 4)), 1)), ((6, 4), (((4, 4), (6, 4)), 1))], 
     (((6, 4), (6, 6)), 1): [((6, 4), (((6, 4), (6, 6)), 1)), ((6, 6), (((6, 4), (6, 6)), 1))], 
     ((((6, 4), (6, 6)), 1), ('ex1', 'ex1')): [((6, 4), 'ex1'), ((6, 6), 'ex1'), ((6, 4), (((6, 4), (6, 6)), 1)), ((6, 6), (((6, 4), (6, 6)), 1))]
+    """
+
+    """
+    ('Creating subset for', [(3, 0), (3, 3)])
+    ('intersects: ', [[(1, 1), (6, 1)], [(2, 2), (4, 2)]])
+    [[], [(((((2, 2), (4, 2)), 1, 2), ('ex0', 'ex0'), ('ex0', 'ex1')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), (((2, 2), (4, 2)), 2)), ((4, 2), 'ex0'), ((2, 2), 'ex0'), ((4, 2), 'ex1')])), (((((2, 2), (4, 2)), 1, 2), ('ex0', 'ex0'), ('ex1', 'ex0')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex1'), ((4, 2), 'ex0'), ((2, 2), 'ex0')])), (((((2, 2), (4, 2)), 1, 2), ('ex0', 'ex0'), ('ex1', 'ex1')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex0'), ((2, 2), 'ex1'), ((4, 2), 'ex0'), ((2, 2), (((2, 2), (4, 2)), 2)), ((4, 2), 'ex1')])), (((((2, 2), (4, 2)), 1, 2), ('ex0', 'ex1'), ('ex1', 'ex0')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex0'), ((2, 2), 'ex1'), ((4, 2), 'ex0'), ((2, 2), (((2, 2), (4, 2)), 2)), ((4, 2), 'ex1')])), (((((2, 2), (4, 2)), 1, 2), ('ex0', 'ex1'), ('ex1', 'ex1')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((2, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex1'), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex0'), ((4, 2), 'ex1')])), (((((2, 2), (4, 2)), 1, 2), ('ex1', 'ex0'), ('ex1', 'ex1')), set([((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 2)), ((2, 2), (((2, 2), (4, 2)), 2)), ((2, 2), 'ex1'), ((4, 2), 'ex0'), ((4, 2), 'ex1')]))]]
+    
+    (1, 1) has no exclusions, that's what is breaking the intersect product
     """
 
     start = time.time()

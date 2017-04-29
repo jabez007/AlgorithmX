@@ -279,6 +279,12 @@ def solve_hashi(puzzle):
             yield extracted_sol
             extracted_solutions.add(extracted_sol)
 
+
+def traverse(edge):
+    p, q = edge
+    for pos in product(range(min(p[0], q[0]), max(p[0], q[0]) + 1), range(min(p[1], q[1]), max(p[1], q[1]) + 1)):
+        yield pos
+
 # # # #
 
 

@@ -175,12 +175,11 @@ def solve_hashi(puzzle):
 
     X = set()  # [(island_pos, (edge, index))]
     for island in islands.keys():
-        for e in island_edges[island]:
-            p, q = e
+        for edge in island_edges[island]:
+            p, q = edge
 
             for b in range(1, min(islands[p], islands[q], 2)+1):
-                element = (island, (tuple(e), b))
-                X.add(element)
+                X.add((island, (tuple(edge), b)))
 
             for p_ex in range(exclusions[p]):
                 X.add((p, "ex%s" % p_ex))
@@ -188,29 +187,61 @@ def solve_hashi(puzzle):
             for q_ex in range(exclusions[q]):
                 X.add((q, "ex%s" % q_ex))
 
-    X = list(X)
+    X = sorted(list(X))
     print("X:", X)
     print("Constructed X")
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
         p, q = edge
-        for b in range(1, min(islands[p], islands[q], 2)+1):
+        bridges = min(islands[p], islands[q], 2)
+        for b in range(1, bridges+1):
+            if b == 2 and islands[p] == 2 and islands[q] == 2:  # can't double connect two 2 islands
+                continue
             bridge_key = (tuple(edge), b)
             bridge_value = set()
             for pos in edge:
                 for c in range(1, b+1):
-                    bridge_value.add((pos, (tuple(edge), c)))
+                    if pos in edge:
+                        bridge_value.add((pos, (tuple(edge), c)))
+                    else:
+                        bridge_value.add((pos, c))
             Y[bridge_key] = list(bridge_value)
 
-            for p_ex, q_ex in product(range(exclusions[p]), range(exclusions[q])):
-                exclude_key = ((tuple(edge), b), (p_ex, q_ex))
-                exclude_value = set()
-                exclude_value.add((p, "ex%s" % p_ex))
-                exclude_value.add((q, "ex%s" % q_ex))
-                for pos in edge:
-                    exclude_value.add((pos, (tuple(edge), b)))
-                Y[exclude_key] = list(exclude_value)
+        for ex in range(min(exclusions[p], exclusions[q], 2), 0, -1):
+            for exes in combinations(product(range(exclusions[p]), range(exclusions[q])), ex):
+                if ex == 1:
+                    p_ex, q_ex = exes[0]
+                    exclude_key = ((tuple(edge), bridges), (p_ex, q_ex))
+                    exclude_value = set()
+                    exclude_value.add((p, "ex%s" % p_ex))
+                    exclude_value.add((q, "ex%s" % q_ex))
+                    for pos in edge:
+                        if pos in edge:
+                            exclude_value.add((pos, (tuple(edge), bridges)))
+                        else:
+                            exclude_value.add((pos, bridges))
+                    Y[exclude_key] = list(exclude_value)
+                else:
+                    ex1, ex2 = exes
+                    p_ex1, q_ex1 = ex1
+                    p_ex2, q_ex2 = ex2
+                    if p_ex1 == p_ex2 or q_ex1 == q_ex2:
+                        continue
+                    exclude_key = ((tuple(edge), 1, 2), ((p_ex1, q_ex1), (p_ex2, q_ex2)))
+                    exclude_value = set()
+                    exclude_value.add((p, "ex%s" % p_ex1))
+                    exclude_value.add((q, "ex%s" % q_ex1))
+                    exclude_value.add((p, "ex%s" % p_ex2))
+                    exclude_value.add((q, "ex%s" % q_ex2))
+                    for pos in edge:
+                        if pos in edge:
+                            exclude_value.add((pos, (tuple(edge), 1)))
+                            exclude_value.add((pos, (tuple(edge), 2)))
+                        else:
+                            exclude_value.add((pos, 1))
+                            exclude_value.add((pos, 2))
+                    Y[exclude_key] = list(exclude_value)
 
     print("Y:", Y)
     print("Constructed Y")
@@ -307,12 +338,15 @@ if __name__ == "__main__":
     I think I need to redo X and Y then...
     """
 
-    twos = ["2.2",
-            "...",
-            "2.2"]
+    twos = ["2.2.2",
+            ".....",
+            "4.2.2",
+            ".....",
+            "2.2.2"]
 
     start = time.time()
-    for solve in solve_hashi(twos):
+    for solve in solve_hashi(x7_1):
         print(solve)
-        print(draw(twos, solve))
+        print(draw(x7_1, solve))
+        print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

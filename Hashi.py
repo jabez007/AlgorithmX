@@ -217,7 +217,7 @@ def solve_hashi(puzzle):
             for exes in combinations(product(range(exclusions[p]), range(exclusions[q])), ex):
                 if ex == 1:
                     p_ex, q_ex = exes[0]
-                    exclude_key = ((tuple(edge), bridges), (p_ex, q_ex))
+                    exclude_key = ((tuple(edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
                     exclude_value = set()
                     exclude_value.add((p, "ex%s" % p_ex))
                     exclude_value.add((q, "ex%s" % q_ex))
@@ -233,7 +233,8 @@ def solve_hashi(puzzle):
                     p_ex2, q_ex2 = ex2
                     if p_ex1 == p_ex2 or q_ex1 == q_ex2:
                         continue  # we need two different exclusions for each island to exclude two bridges
-                    exclude_key = ((tuple(edge), 1, 2), ((p_ex1, q_ex1), (p_ex2, q_ex2)))
+                    exclude_key = ((tuple(edge), 1, 2),
+                                   (("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2)))
                     exclude_value = set()
                     exclude_value.add((p, "ex%s" % p_ex1))
                     exclude_value.add((q, "ex%s" % q_ex1))
@@ -247,15 +248,21 @@ def solve_hashi(puzzle):
                             exclude_value.add((pos, 1))
                             exclude_value.add((pos, 2))
                     Y[exclude_key] = list(exclude_value)
+        # include the intersection points here if they are not hit in any of the included bridges
+        for pos in traverse(edge):
+            if pos in intersecting_edges.keys():
+                intersect_key = (pos, "empty")
+                intersect_value = [(pos, "+")]
+                Y[intersect_key] = intersect_value
 
-    print("Y:", Y)
     print("Constructed Y")
+    debug_print(Y)
 
     # # # #
 
     X, Y = exact_cover(X, Y)
-    print("new X:", X)
     print("Reformatted X")
+    # debug_print(X)
 
     print("Solving...")
     extracted_solutions = set()
@@ -274,6 +281,12 @@ def traverse(edge):
     p, q = edge
     for pos in product(range(min(p[0], q[0]), max(p[0], q[0]) + 1), range(min(p[1], q[1]), max(p[1], q[1]) + 1)):
         yield pos
+
+
+def debug_print(dictionary):
+    for key, value in dictionary.items():
+        print(key)
+        print("\t%s" % value)
 
 # # # #
 
@@ -318,21 +331,32 @@ if __name__ == "__main__":
             "1......",
             ".2..3.2"]
 
-    x11_1 = [".2..3...1..",
-             "...1.3.4..3",
-             "1...3.1..1.",
-             ".3.5.3....3",
-             "3.1.3..5.4.",
-             ".....3.....",
-             ".3.5..2...2",
-             "2....1.4.3.",
-             ".1..2.3...1",
-             "2..3.1.1...",
-             "..1.2.3..2."]
+    x7_10 = [".3..3..",
+             "2.....1",
+             ".3.3...",
+             "6.2.3.5",
+             ".2.3.2.",
+             "3.1.3..",
+             ".4.2..3",
+             "3....2.",
+             ".2..3.1",
+             "3..3.3."]
+
+    x8_11 = [".3..4.2.",
+             "2......2",
+             ".2.3..1.",
+             "....2..4",
+             "5..4..2.",
+             ".1..3...",
+             "4..1...3",
+             ".2..3.5.",
+             "...2.1.3",
+             "2...1.3.",
+             ".2.3.2.3"]
 
     start = time.time()
-    for solve in solve_hashi(x11_1):
+    for solve in solve_hashi(x7_10):
         print(solve)
-        print(draw(x11_1, solve))
+        print(draw(x7_10, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

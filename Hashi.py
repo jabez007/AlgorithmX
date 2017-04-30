@@ -187,6 +187,10 @@ def solve_hashi(puzzle):
             for q_ex in range(exclusions[q]):
                 X.add((q, "ex%s" % q_ex))
 
+            for pos in traverse(edge):
+                if pos in intersecting_edges.keys():
+                    X.add((pos, "+"))
+
     X = sorted(list(X))
     print("X:", X)
     print("Constructed X")
@@ -195,19 +199,20 @@ def solve_hashi(puzzle):
     for edge in edge_list:
         p, q = edge
         bridges = min(islands[p], islands[q], 2)
+        # include single and double bridges
         for b in range(1, bridges+1):
             if b == 2 and islands[p] == 2 and islands[q] == 2:  # can't double connect two 2 islands
                 continue
             bridge_key = (tuple(edge), b)
             bridge_value = set()
-            for pos in edge:
+            for pos in traverse(edge):
                 for c in range(1, b+1):
                     if pos in edge:
                         bridge_value.add((pos, (tuple(edge), c)))
-                    else:
-                        bridge_value.add((pos, c))
+                    elif pos in intersecting_edges.keys():
+                        bridge_value.add((pos, "+"))
             Y[bridge_key] = list(bridge_value)
-
+        # exclude one or both bridges. When excluding just one bridge, exclude the largest possible
         for ex in range(min(exclusions[p], exclusions[q], 2), 0, -1):
             for exes in combinations(product(range(exclusions[p]), range(exclusions[q])), ex):
                 if ex == 1:
@@ -304,14 +309,7 @@ if __name__ == "__main__":
             ".1.1...",
             "1.2.1..",
             ".2.3..2"]
-    """
-    (((2, 3), (4, 3)), 1, (((((3, 2), (3, 4)), 1, 2), ('ex0', 'ex0'), ('ex0', 'ex1')),)): [((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), (((2, 3), (4, 3)), 1)), ((3, 2), (((3, 2), (3, 4)), 2)), ((3, 4), (((3, 2), (3, 4)), 2)), ((3, 2), 'ex0'), ((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), 'ex1'), ((3, 4), 'ex0'), ((3, 4), (((3, 2), (3, 4)), 1))], 
-    
-    (((3, 2), (3, 4)), 1, (((((2, 3), (4, 3)), 1), ('ex0', 'ex0')), ((((2, 3), (4, 3)), 1), ('ex1', 'ex0')))): [((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), (((3, 2), (3, 4)), 1)), ((2, 3), 'ex1'), ((2, 3), 'ex0'), ((4, 3), (((2, 3), (4, 3)), 1)), ((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), 'ex0')], 
-    (((3, 2), (3, 4)), 2, (((((2, 3), (4, 3)), 1), ('ex0', 'ex0')), ((((2, 3), (4, 3)), 1), ('ex1', 'ex0')))): [((3, 2), (((3, 2), (3, 4)), 1)), ((3, 4), (((3, 2), (3, 4)), 1)), ((3, 2), (((3, 2), (3, 4)), 2)), ((3, 4), (((3, 2), (3, 4)), 2)), ((2, 3), 'ex1'), ((2, 3), 'ex0'), ((4, 3), (((2, 3), (4, 3)), 1)), ((2, 3), (((2, 3), (4, 3)), 1)), ((4, 3), 'ex0')]
-    """
 
-    # this one fails because (3, 0) <-> (3, 3) intersects two possible edges
     x7_2 = ["2.3..1.",
             ".1.1..2",
             "..3.1..",
@@ -319,34 +317,10 @@ if __name__ == "__main__":
             "..2.2..",
             "1......",
             ".2..3.2"]
-    """
-    ((((3, 0), (3, 3)), 1), ('ex1', 'ex0')): [((3, 0), 'ex1'), ((3, 3), 'ex0'), ((3, 0), (((3, 0), (3, 3)), 1)), ((3, 3), (((3, 0), (3, 3)), 1))],
-    ((((3, 0), (3, 3)), 1), ('ex0', 'ex0')): [((3, 0), 'ex0'), ((3, 3), 'ex0'), ((3, 0), (((3, 0), (3, 3)), 1)), ((3, 3), (((3, 0), (3, 3)), 1))], 
-    
-    (((1, 1), (6, 1)), 1, (((((3, 0), (3, 3)), 1), ('ex0', 'ex0')),)): [((1, 1), (((1, 1), (6, 1)), 1)), ((6, 1), (((1, 1), (6, 1)), 1)), ((3, 3), 'ex0'), ((3, 0), 'ex0'), ((3, 3), (((3, 0), (3, 3)), 1)), ((3, 0), (((3, 0), (3, 3)), 1))],
-    (((1, 1), (6, 1)), 1, (((((3, 0), (3, 3)), 1), ('ex1', 'ex0')),)): [((1, 1), (((1, 1), (6, 1)), 1)), ((6, 1), (((1, 1), (6, 1)), 1)), ((3, 3), 'ex0'), ((3, 3), (((3, 0), (3, 3)), 1)), ((3, 0), 'ex1'), ((3, 0), (((3, 0), (3, 3)), 1))],
-    
-    (((2, 2), (4, 2)), 1, (((((3, 0), (3, 3)), 1), ('ex1', 'ex0')),)): [((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((3, 3), 'ex0'), ((3, 3), (((3, 0), (3, 3)), 1)), ((3, 0), 'ex1'), ((3, 0), (((3, 0), (3, 3)), 1))], 
-    ((((2, 2), (4, 2)), 1), ('ex0', 'ex0')): [((2, 2), 'ex0'), ((4, 2), 'ex0'), ((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1))],
-    ((((2, 2), (4, 2)), 1), ('ex1', 'ex1')): [((2, 2), 'ex1'), ((4, 2), 'ex1'), ((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1))],
-    (((2, 2), (4, 2)), 1, (((((3, 0), (3, 3)), 1), ('ex0', 'ex0')),)): [((2, 2), (((2, 2), (4, 2)), 1)), ((4, 2), (((2, 2), (4, 2)), 1)), ((3, 3), 'ex0'), ((3, 0), 'ex0'), ((3, 3), (((3, 0), (3, 3)), 1)), ((3, 0), (((3, 0), (3, 3)), 1))],
-    """
-
-    """
-    ((1, 1), (6, 1)) and ((2, 2), (4, 2)) both intersect ((3, 0), (3, 3))
-    That means both subsets try to exclude that edge which means we can't select both subsets
-    I think I need to redo X and Y then...
-    """
-
-    twos = ["2.2.2",
-            ".....",
-            "4.2.2",
-            ".....",
-            "2.2.2"]
 
     start = time.time()
-    for solve in solve_hashi(x7_1):
+    for solve in solve_hashi(x7_2):
         print(solve)
-        print(draw(x7_1, solve))
+        print(draw(x7_2, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

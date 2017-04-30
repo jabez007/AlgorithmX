@@ -169,7 +169,7 @@ def solve_hashi(puzzle):
     exclusions = {pos: sum(min(islands[p], islands[q], 2) for p, q in island_edges[pos]) - islands[pos]
                   for pos in islands.keys()}
     # {island_pos: number of bridges that need to be excluded from total possible}
-    print("needed exclusions: ", exclusions)
+    # print("needed exclusions: ", exclusions)
 
     # # # #
 
@@ -213,7 +213,7 @@ def solve_hashi(puzzle):
                         bridge_value.add((pos, "+"))
             Y[bridge_key] = list(bridge_value)
         # exclude one or both bridges. When excluding just one bridge, exclude the largest possible
-        for ex in range(min(exclusions[p], exclusions[q], 2), 0, -1):
+        for ex in range(min(exclusions[p], exclusions[q], bridges), 0, -1):
             for exes in combinations(product(range(exclusions[p]), range(exclusions[q])), ex):
                 if ex == 1:
                     p_ex, q_ex = exes[0]
@@ -232,7 +232,7 @@ def solve_hashi(puzzle):
                     p_ex1, q_ex1 = ex1
                     p_ex2, q_ex2 = ex2
                     if p_ex1 == p_ex2 or q_ex1 == q_ex2:
-                        continue
+                        continue  # we need two different exclusions for each island to exclude two bridges
                     exclude_key = ((tuple(edge), 1, 2), ((p_ex1, q_ex1), (p_ex2, q_ex2)))
                     exclude_value = set()
                     exclude_value.add((p, "ex%s" % p_ex1))
@@ -318,9 +318,21 @@ if __name__ == "__main__":
             "1......",
             ".2..3.2"]
 
+    x11_1 = [".2..3...1..",
+             "...1.3.4..3",
+             "1...3.1..1.",
+             ".3.5.3....3",
+             "3.1.3..5.4.",
+             ".....3.....",
+             ".3.5..2...2",
+             "2....1.4.3.",
+             ".1..2.3...1",
+             "2..3.1.1...",
+             "..1.2.3..2."]
+
     start = time.time()
-    for solve in solve_hashi(x7_2):
+    for solve in solve_hashi(x11_1):
         print(solve)
-        print(draw(x7_2, solve))
+        print(draw(x11_1, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

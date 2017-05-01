@@ -257,7 +257,8 @@ def solve_hashi(puzzle):
                 extracted_sol.append((sol[0], sol[1]))
         extracted_sol = tuple(sorted(extracted_sol))
         if extracted_sol not in extracted_solutions:
-            yield extracted_sol
+            if check_connected(extracted_sol):
+                yield extracted_sol
             extracted_solutions.add(extracted_sol)
 
 
@@ -265,6 +266,57 @@ def traverse(edge):
     p, q = edge
     for pos in product(range(min(p[0], q[0]), max(p[0], q[0]) + 1), range(min(p[1], q[1]), max(p[1], q[1]) + 1)):
         yield pos
+
+
+def check_connected(solution):
+    max_len = 0
+    edges = dict()
+    for bridge, strength in solution:
+        max_len += strength
+        p, q = bridge
+
+        if p not in edges.keys():
+            edges[p] = set()
+        if q not in edges.keys():
+            edges[q] = set()
+
+        edges[p].add(q)
+        edges[q].add(p)
+
+    nodes = sorted(edges.keys())
+    adj_m = list()
+    for n in nodes:
+        row = list()
+        for m in nodes:
+            if m in edges[n]:
+                row.append(1)
+            else:
+                row.append(0)
+        adj_m.append(row)
+
+    walks = adj_m[0][:]
+    for walk_len in range(max_len):
+        walk_path = matrix_power(adj_m, walk_len)
+        for i, p in enumerate(walk_path[0]):
+            if walks[i] == 0:
+                walks[i] = p
+
+    return min(walks) > 0
+
+
+def matrix_multiply(matrix_a, matrix_b):
+    zip_b = list(zip(*matrix_b))
+    return [[sum(ele_a*ele_b for ele_a, ele_b in zip(row_a, col_b))
+             for col_b in zip_b] for row_a in matrix_a]
+
+
+def matrix_power(matrix, exponent):
+    self_matrix = matrix
+    exp_matrix = matrix
+    while exponent > 1:
+        exp_matrix = matrix_multiply(exp_matrix, self_matrix)
+        exponent -= 1
+    return exp_matrix
 
 
 def debug_print(dictionary):

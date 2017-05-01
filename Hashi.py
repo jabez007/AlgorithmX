@@ -191,16 +191,16 @@ def solve_hashi(puzzle):
                 if pos in intersecting_edges.keys():
                     X.add((pos, "+"))
 
-    X = sorted(list(X))
+    X = list(X)
     print("X:", X)
     print("Constructed X")
 
     Y = dict()  # {(edge, number_of): [X_element1, X_element2, ...]}
     for edge in edge_list:
         p, q = edge
-        bridges = min(islands[p], islands[q], 2)
+        num_bridges = min(islands[p], islands[q], 2)
         # include single and double bridges
-        for b in range(1, bridges+1):
+        for b in range(1, num_bridges+1):
             if b == 2 and islands[p] == 2 and islands[q] == 2:  # can't double connect two 2 islands
                 continue
             bridge_key = (tuple(edge), b)
@@ -212,41 +212,25 @@ def solve_hashi(puzzle):
                     elif pos in intersecting_edges.keys():
                         bridge_value.add((pos, "+"))
             Y[bridge_key] = list(bridge_value)
-        # exclude one or both bridges. When excluding just one bridge, exclude the largest possible
-        for ex in range(min(exclusions[p], exclusions[q], bridges), 0, -1):
-            for exes in combinations(product(range(exclusions[p]), range(exclusions[q])), ex):
-                if ex == 1:
-                    p_ex, q_ex = exes[0]
-                    exclude_key = ((tuple(edge), bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
+        # exclude bridges. If there is only one bridge to exclude, just exclude the highest possible bridge
+        to_exclude = min(exclusions[p], exclusions[q])
+        for p_ex, q_ex in product(range(exclusions[p]), range(exclusions[q])):
+            if to_exclude == 1:
+                exclude_key = ((tuple(edge), num_bridges), ("ex%s" % p_ex, "ex%s" % q_ex))
+                exclude_value = set()
+                exclude_value.add((p, "ex%s" % p_ex))
+                exclude_value.add((q, "ex%s" % q_ex))
+                for pos in edge:
+                    exclude_value.add((pos, (tuple(edge), num_bridges)))
+                Y[exclude_key] = list(exclude_value)
+            else:
+                for ex in range(1, num_bridges+1):
+                    exclude_key = ((tuple(edge), ex), ("ex%s" % p_ex, "ex%s" % q_ex))
                     exclude_value = set()
                     exclude_value.add((p, "ex%s" % p_ex))
                     exclude_value.add((q, "ex%s" % q_ex))
                     for pos in edge:
-                        if pos in edge:
-                            exclude_value.add((pos, (tuple(edge), bridges)))
-                        else:
-                            exclude_value.add((pos, bridges))
-                    Y[exclude_key] = list(exclude_value)
-                else:
-                    ex1, ex2 = exes
-                    p_ex1, q_ex1 = ex1
-                    p_ex2, q_ex2 = ex2
-                    if p_ex1 == p_ex2 or q_ex1 == q_ex2:
-                        continue  # we need two different exclusions for each island to exclude two bridges
-                    exclude_key = ((tuple(edge), 1, 2),
-                                   (("ex%s" % p_ex1, "ex%s" % q_ex1), ("ex%s" % p_ex2, "ex%s" % q_ex2)))
-                    exclude_value = set()
-                    exclude_value.add((p, "ex%s" % p_ex1))
-                    exclude_value.add((q, "ex%s" % q_ex1))
-                    exclude_value.add((p, "ex%s" % p_ex2))
-                    exclude_value.add((q, "ex%s" % q_ex2))
-                    for pos in edge:
-                        if pos in edge:
-                            exclude_value.add((pos, (tuple(edge), 1)))
-                            exclude_value.add((pos, (tuple(edge), 2)))
-                        else:
-                            exclude_value.add((pos, 1))
-                            exclude_value.add((pos, 2))
+                        exclude_value.add((pos, (tuple(edge), ex)))
                     Y[exclude_key] = list(exclude_value)
         # include the intersection points here if they are not hit in any of the included bridges
         for pos in traverse(edge):
@@ -331,6 +315,16 @@ if __name__ == "__main__":
             "1......",
             ".2..3.2"]
 
+    x7_3 = ["2..4.1.",
+            "..1.3.3",
+            "...2...",
+            "2.4.2..",
+            "...1..3",
+            "..2.1..",
+            "1..2..2"]
+    # this one gives multiple solutions, but only one is actually correct.
+    # The islands are all full, but the graph isn't connected
+
     x7_10 = [".3..3..",
              "2.....1",
              ".3.3...",
@@ -355,8 +349,8 @@ if __name__ == "__main__":
              ".2.3.2.3"]
 
     start = time.time()
-    for solve in solve_hashi(x7_10):
+    for solve in solve_hashi(x7_3):
         print(solve)
-        print(draw(x7_10, solve))
+        print(draw(x7_3, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

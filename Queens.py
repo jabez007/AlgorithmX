@@ -2,11 +2,11 @@ from itertools import product
 from AlgorithmX import *
 
 
-def solve_queens(grid, Q=4):
+def solve_queens(grid):
     """
-    An efficient Latin Squares solver using Algorithm X.
+    A n-Queens solver using Algorithm X.
+    https://en.wikipedia.org/wiki/Eight_queens_puzzle
     :param grid: 
-    :param Q: number of Queens on the board 
     :return: 
     """
     rows, columns = len(grid), len(grid[0])
@@ -28,17 +28,19 @@ def solve_queens(grid, Q=4):
             - left_diagonal
     '''
     for r, c in product(range(N), range(N)):
+        Y[(r, c, "Q")] = [("r", r), ("c", c)]
+        # Every row and column has to be covered by a Queen
+
+        # There are probably more diagonals than there are Queens to cover them all, so we need to exclude some
         rd_moves = right_diagonal((r, c), N)
+        if rd_moves:
+            Y[(r, c, "Q")].append(("rd", rd_moves[0]))
+            Y[("rd", rd_moves[0], "EX")] = [("rd", rd_moves[0])]
+
         ld_moves = left_diagonal((r, c), N)
-
-        if rd_moves and ld_moves:
-            rd = ("rd", rd_moves[0])
-            ld = ("ld", ld_moves[0])
-
-            if rd in X and ld in X:
-                Y[(r, c, "Q")] = [("r", r), ("c", c),
-                                  ("rd", rd_moves[0]),
-                                  ("ld", ld_moves[0])]
+        if ld_moves:
+            Y[(r, c, "Q")].append(("ld", ld_moves[0]))
+            Y[("ld", ld_moves[0], "EX")] = [("ld", ld_moves[0])]
 
     X, Y = exact_cover(X, Y)
 
@@ -121,34 +123,35 @@ def right_diagonal_set(N):
     rd = set()
     for rc in product(range(N), range(N)):
         rd_moves = right_diagonal(rc, N)
-        if rd_moves and left_diagonal(rd_moves[0], N):  # we have a right and left diagonal
+        if rd_moves:
             rd.add(rd_moves[0])
-    return list(rd)
+    return sorted(list(rd))
 
 
 def left_diagonal_set(N):
     ld = set()
     for rc in product(range(N), range(N)):
         ld_moves = left_diagonal(rc, N)
-        if ld_moves and right_diagonal(ld_moves[0], N):  # we have a left and right diagonal
+        if ld_moves:
             ld.add(ld_moves[0])
-    return list(ld)
+    return sorted(list(ld))
 
 
 if __name__ == "__main__":
     puzzle = [
-        ["", "", "", ""],
-        ["", "",  "", ""],
-        ["", "",  "", ""],
-        ["", "",  "", ""]]
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""]]
 
+    count = 0
     for sol in solve_queens(puzzle):
+        count += 1
         for line in sol:
             print(line)
         print()
-    """
-    ["", "Q", "", ""]
-    ["", "", "", "Q"]
-    ["Q", "", "", ""]
-    ["", "", "Q", ""]
-    """
+    print("%s solutions found" % count)

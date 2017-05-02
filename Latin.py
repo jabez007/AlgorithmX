@@ -4,7 +4,7 @@ from AlgorithmX import *
 
 def solve_square(grid):
     """
-    An efficient Latin Squares solver using Algorithm X.
+    A Latin Squares solver using Algorithm X.
     :param grid: 
     :return: 
     """
@@ -50,10 +50,11 @@ def solve_square(grid):
 
 if __name__ == "__main__":
     puzzle = [
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]]
+        [1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 1]]
 
     for sol in solve_square(puzzle):
         for line in sol:

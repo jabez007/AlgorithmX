@@ -224,14 +224,36 @@ def solve_hashi(puzzle):
                     exclude_value.add((pos, (tuple(edge), num_bridges)))
                 Y[exclude_key] = list(exclude_value)
             else:
-                for ex in range(1, num_bridges+1):
-                    exclude_key = ((tuple(edge), ex), ("ex%s" % p_ex, "ex%s" % q_ex))
+                if num_bridges == 1:
+                    exclude_key = ((tuple(edge), 1), ("ex%s" % p_ex, "ex%s" % q_ex))
                     exclude_value = set()
                     exclude_value.add((p, "ex%s" % p_ex))
                     exclude_value.add((q, "ex%s" % q_ex))
                     for pos in edge:
-                        exclude_value.add((pos, (tuple(edge), ex)))
+                        exclude_value.add((pos, (tuple(edge), 1)))
                     Y[exclude_key] = list(exclude_value)
+                else:  # exclude the highest possible bridge first
+                    exclude_key = ((tuple(edge), 2), ("ex%s" % p_ex, "ex%s" % q_ex))
+                    exclude_value = set()
+                    exclude_value.add((p, "ex%s" % p_ex))
+                    exclude_value.add((q, "ex%s" % q_ex))
+                    for pos in edge:
+                        exclude_value.add((pos, (tuple(edge), 2)))
+                    Y[exclude_key] = list(exclude_value)
+                    # if there is room to exclude another, then exclude both possible bridges
+                    if p_ex + 1 < exclusions[p] and q_ex + 1 < exclusions[q]:
+                        exclude_key = ((tuple(edge), 2, 1),
+                                       (("ex%s" % p_ex, "ex%s" % q_ex), ("ex%s" % (p_ex+1), "ex%s" % (q_ex+1))))
+                        exclude_value = set()
+                        exclude_value.add((p, "ex%s" % p_ex))
+                        exclude_value.add((q, "ex%s" % q_ex))
+                        exclude_value.add((p, "ex%s" % (p_ex+1)))
+                        exclude_value.add((q, "ex%s" % (q_ex+1)))
+                        for pos in edge:
+                            exclude_value.add((pos, (tuple(edge), 2)))
+                            exclude_value.add((pos, (tuple(edge), 1)))
+                        Y[exclude_key] = list(exclude_value)
+
         # include the intersection points here if they are not hit in any of the included bridges
         for pos in traverse(edge):
             if pos in intersecting_edges.keys():
@@ -241,6 +263,7 @@ def solve_hashi(puzzle):
 
     print("Constructed Y")
     debug_print(Y)
+    print("%s subsets" % len(Y.keys()))
 
     # # # #
 
@@ -377,16 +400,25 @@ if __name__ == "__main__":
     # this one gives multiple solutions, but only one is actually correct.
     # The islands are all full, but the graph isn't connected
 
-    x7_10 = [".3..3..",
-             "2.....1",
-             ".3.3...",
-             "6.2.3.5",
-             ".2.3.2.",
-             "3.1.3..",
-             ".4.2..3",
-             "3....2.",
-             ".2..3.1",
-             "3..3.3."]
+    x9_1 = [".2.3.3..2",
+            "1.1......",
+            ".1.1..5.4",
+            "3.3.1....",
+            ".2.4..3..",
+            "3...1...3",
+            ".3.7.6.3.",
+            "........1",
+            "3..2.3.2."]
+
+    x9_2 = ["2.4..3.2.",
+            "...1.....",
+            "3.6...1.1",
+            "...4.3.1.",
+            "3.4.1.6.4",
+            ".1.3.2...",
+            "2.1...3.4",
+            ".....1...",
+            ".2.3..2.3"]
 
     x8_11 = [".3..4.2.",
              "2......2",
@@ -401,8 +433,8 @@ if __name__ == "__main__":
              ".2.3.2.3"]
 
     start = time.time()
-    for solve in solve_hashi(x7_3):
+    for solve in solve_hashi(x9_2):
         print(solve)
-        print(draw(x7_3, solve))
+        print(draw(x9_2, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

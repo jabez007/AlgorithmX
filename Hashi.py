@@ -318,9 +318,14 @@ def check_connected(solution):
         adj_m.append(row)
 
     walks = adj_m[0][:]
-    for walk_len in range(max_len):
-        walk_path = matrix_power(adj_m, walk_len)
-        for i, p in enumerate(walk_path[0]):
+    walk_m = adj_m
+    exp = 1
+    while exp < max_len:
+        if min(walks) > 0:
+            break
+        walk_m = matrix_multiply(walk_m, adj_m)
+        exp += 1
+        for i, p in enumerate(walk_m[0]):
             if walks[i] == 0:
                 walks[i] = p
 

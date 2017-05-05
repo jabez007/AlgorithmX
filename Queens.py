@@ -15,8 +15,9 @@ def solve_queens(grid):
     '''X is our universe - as a list'''
     X = ([("r", r) for r in range(N)] +  # each row in the grid
          [("c", c) for c in range(N)] +  # each column in the grid
-         [("rd", rd) for rd in right_diagonal_set(N)] +  # each right diagonal in the grid
-         [("ld", ld) for ld in left_diagonal_set(N)])  # each left diagonal in the grid
+         [("rd", rd, SECONDARY) for rd in right_diagonal_set(N)] +  # each right diagonal in the grid
+         [("ld", ld, SECONDARY) for ld in left_diagonal_set(N)])  # each left diagonal in the grid
+    # There are probably more diagonals than there are Queens to cover them all, so those are secondary
 
     Y = dict()
     '''
@@ -31,16 +32,13 @@ def solve_queens(grid):
         Y[(r, c, "Q")] = [("r", r), ("c", c)]
         # Every row and column has to be covered by a Queen
 
-        # There are probably more diagonals than there are Queens to cover them all, so we need to exclude some
         rd_moves = right_diagonal((r, c), N)
         if rd_moves:
-            Y[(r, c, "Q")].append(("rd", rd_moves[0]))
-            Y[("rd", rd_moves[0], "EX")] = [("rd", rd_moves[0])]
+            Y[(r, c, "Q")].append(("rd", rd_moves[0], SECONDARY))
 
         ld_moves = left_diagonal((r, c), N)
         if ld_moves:
-            Y[(r, c, "Q")].append(("ld", ld_moves[0]))
-            Y[("ld", ld_moves[0], "EX")] = [("ld", ld_moves[0])]
+            Y[(r, c, "Q")].append(("ld", ld_moves[0], SECONDARY))
 
     X, Y = exact_cover(X, Y)
 

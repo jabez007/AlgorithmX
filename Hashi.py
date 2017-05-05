@@ -189,7 +189,7 @@ def solve_hashi(puzzle):
 
             for pos in traverse(edge):
                 if pos in intersecting_edges.keys():
-                    X.add((pos, "+"))
+                    X.add((pos, "+", SECONDARY))
 
     X = list(X)
     print("X:", X)
@@ -210,7 +210,7 @@ def solve_hashi(puzzle):
                     if pos in edge:
                         bridge_value.add((pos, (tuple(edge), c)))
                     elif pos in intersecting_edges.keys():
-                        bridge_value.add((pos, "+"))
+                        bridge_value.add((pos, "+", SECONDARY))
             Y[bridge_key] = list(bridge_value)
         # exclude bridges. If there is only one bridge to exclude, just exclude the highest possible bridge
         to_exclude = min(exclusions[p], exclusions[q])
@@ -255,11 +255,13 @@ def solve_hashi(puzzle):
                         Y[exclude_key] = list(exclude_value)
 
         # include the intersection points here if they are not hit in any of the included bridges
+        """
         for pos in traverse(edge):
             if pos in intersecting_edges.keys():
                 intersect_key = (pos, "empty")
                 intersect_value = [(pos, "+")]
                 Y[intersect_key] = intersect_value
+        """
 
     print("Constructed Y")
     debug_print(Y)
@@ -438,8 +440,8 @@ if __name__ == "__main__":
              ".1.2..2..1."]
 
     start = time.time()
-    for solve in solve_hashi(x11_1):
+    for solve in solve_hashi(x9_2):
         print(solve)
-        print(draw(x11_1, solve))
+        print(draw(x9_2, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))

@@ -440,8 +440,8 @@ if __name__ == "__main__":
              ".1.2..2..1."]
 
     start = time.time()
-    for solve in solve_hashi(x9_2):
+    for solve in solve_hashi(x11_1):
         print(solve)
-        print(draw(x9_2, solve))
+        print(draw(x11_1, solve))
         print("in %s minutes" % ((time.time() - start) / 60))
     print("Finished in %s minutes" % ((time.time() - start) / 60))
